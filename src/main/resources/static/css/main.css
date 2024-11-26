@@ -1,0 +1,41 @@
+/* Map and Modal Styling */
+#map {
+    height: 70vh;
+    border: 2px solid #4a4a4a;
+    border-radius: 8px;
+}
+
+.modal {
+    z-index: 1050;
+    display: none;
+}
+
+.modal.is-active {
+    display: flex;
+}
+
+.leaflet-container {
+    z-index: 1;
+}
+
+#map {
+    height: 70vh;
+    border: 2px solid #4a4a4a;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+/*.modal {*/
+/*    display: none;*/
+/*}*/
+
+/*.modal.is-active {*/
+/*    display: flex;*/
+/*}*/
+
+.notification {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+}

@@ -1,111 +1,144 @@
+// Initialize the map
 const map = L.map('map').setView([53.5511, 9.9937], 13);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap contributors'
 }).addTo(map);
 
-// Utility function to add markers with Edit/Delete functionality
+// Variables to track temporary states
+let tempMarker = null;
+let editingMarkerId = null;
+
+// Function to add markers to the map
 function addMarkerToMap(lat, lng, id, name = '', description = '') {
     const marker = L.marker([lat, lng]).addTo(map);
-    let popupContent = `
-        <strong>${name}</strong><br>${description}
-        <br><button onclick="window.editPin(${id}, '${name}', '${description}', ${lat}, ${lng})">Edit</button>
-        <button onclick="window.deletePin(${id})">Delete</button>
-    `;
-    marker.bindPopup(popupContent);
-    return marker;
+    marker.bindPopup(`
+        <div class="box">
+            <p class="title is-6">${name || 'No Title'}</p>
+            <p class="subtitle is-7">${description || 'No Description'}</p>
+            <button class="button is-primary is-small" onclick="openEditModal(${id}, '${name}', '${description}', ${lat}, ${lng})">Edit</button>
+            <button class="button is-danger is-small" onclick="openDeleteModal(${id})">Delete</button>
+        </div>
+    `);
+    marker.bindTooltip(`${name || 'No Title'}`);
 }
 
-// Fetch pinpoints from the API
-fetch('/api/pinpoints')
-    .then(response => {
-        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-        return response.json();
-    })
-    .then(data => {
-        data.forEach(pinPoint => {
-            addMarkerToMap(pinPoint.lat, pinPoint.lng, pinPoint.id, pinPoint.name, pinPoint.description);
-        });
-    })
-    .catch(error => console.error('Error fetching pinpoints:', error.message));
-
-let tempMarker;
+// Handle map clicks to add a new pin
 map.on('click', function (e) {
-    if (tempMarker) { map.removeLayer(tempMarker); }
-    tempMarker = addMarkerToMap(e.latlng.lat, e.latlng.lng);
-
-    const form = document.getElementById('pin-form');
-    form.style.display = 'block';
-    form.style.left = `${e.originalEvent.pageX}px`;
-    form.style.top = `${e.originalEvent.pageY}px`;
-
-    document.getElementById('save-pin').onclick = function () {
-        savePin(e.latlng.lat, e.latlng.lng);
-    };
-
-    document.getElementById('cancel-pin').onclick = function () {
+    if (tempMarker) {
         map.removeLayer(tempMarker);
-        form.style.display = 'none';
-    };
+    }
+    tempMarker = L.marker(e.latlng).addTo(map);
+    openPinModal(e.latlng.lat, e.latlng.lng);
 });
 
-function savePin(lat, lng) {
-    const name = document.getElementById('pin-name').value;
-    const description = document.getElementById('pin-description').value;
-
-    const pinData = { lat, lng, name, description };
-
-    fetch('/add-pin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(pinData),
-    })
-        .then(response => {
-            if (!response.ok) throw new Error('Error saving pin.');
-            return response.text();
-        })
-        .then(() => {
-            addMarkerToMap(lat, lng, null, name, description); // New marker won't have an ID until refreshed
-            resetPinForm();
-        })
-        .catch(error => console.error('Error saving pin:', error.message));
-}
-
-function resetPinForm() {
-    const form = document.getElementById('pin-form');
-    form.style.display = 'none';
+// Open modal for adding or editing pins
+function openPinModal(lat, lng) {
+    editingMarkerId = null; // Reset editing state
     document.getElementById('pin-name').value = '';
     document.getElementById('pin-description').value = '';
+    document.getElementById('save-pin').onclick = function () {
+        savePin(lat, lng);
+    };
+    document.getElementById('pin-modal').classList.add('is-active');
 }
 
-// Make functions globally accessible
-window.editPin = function (id, name, description, lat, lng) {
-    const newName = prompt('Enter new name:', name);
-    const newDescription = prompt('Enter new description:', description);
-    if (newName && newDescription) {
-        fetch(`/edit-pin/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: newName, description: newDescription }),
-        })
-            .then(response => {
-                if (!response.ok) throw new Error('Error editing pin.');
-                alert('Pin updated successfully.');
-                location.reload();
-            })
-            .catch(error => console.error('Error editing pin:', error.message));
-    }
-};
+// Save or edit a pin
+function savePin(lat, lng) {
+    const name = document.getElementById('pin-name').value.trim();
+    const description = document.getElementById('pin-description').value.trim();
 
-window.deletePin = function (id) {
-    if (confirm('Are you sure you want to delete this pin?')) {
-        fetch(`/delete-pin/${id}`, {
-            method: 'DELETE',
-        })
-            .then(response => {
-                if (!response.ok) throw new Error('Error deleting pin.');
-                alert('Pin deleted successfully.');
-                location.reload();
-            })
-            .catch(error => console.error('Error deleting pin:', error.message));
+    if (!name || !description) {
+        alert('Name and description are required.');
+        return;
     }
-};
+
+    const payload = { lat, lng, name, description };
+    const url = editingMarkerId ? `/edit-pin/${editingMarkerId}` : '/add-pin';
+    const method = editingMarkerId ? 'PUT' : 'POST';
+
+    fetch(url, {
+        method: method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+    })
+        .then(response => {
+            if (!response.ok) {
+                return response.text().then(text => { throw new Error(text); });
+            }
+            return response.json(); // Expect JSON response from the server
+        })
+        .then(data => {
+            showToast(data.message, 'is-success');
+            closePinModal(); // Close the modal
+            location.reload(); // Refresh the map to reflect changes
+        })
+        .catch(err => {
+            console.error('Error saving pin:', err);
+            showToast('Failed to save pin. Please try again.', 'is-danger');
+        });
+}
+
+
+// Close the modal
+function closePinModal() {
+    if (tempMarker) {
+        map.removeLayer(tempMarker);
+        tempMarker = null;
+    }
+    document.getElementById('pin-modal').classList.remove('is-active');
+}
+
+// Open modal for editing an existing pin
+function openEditModal(id, name, description, lat, lng) {
+    editingMarkerId = id;
+    document.getElementById('pin-name').value = name;
+    document.getElementById('pin-description').value = description;
+    document.getElementById('save-pin').onclick = function () {
+        savePin(lat, lng);
+    };
+    document.getElementById('pin-modal').classList.add('is-active');
+}
+
+// Open confirmation modal for deleting a pin
+function openDeleteModal(id) {
+    document.getElementById('delete-confirmation-modal').classList.add('is-active');
+    document.getElementById('confirm-delete').onclick = function () {
+        deletePin(id);
+    };
+}
+
+// Delete a pin
+function deletePin(id) {
+    fetch(`/delete-pin/${id}`, { method: 'DELETE' })
+        .then(response => {
+            if (!response.ok) throw new Error('Failed to delete pin.');
+            showToast('Pin deleted successfully!', 'is-success');
+            location.reload(); // Refresh the map to remove deleted pin
+        })
+        .catch(err => {
+            console.error('Error deleting pin:', err);
+            showToast('Failed to delete pin.', 'is-danger');
+        });
+}
+
+// Fetch and render existing pins
+fetch('/api/pinpoints')
+    .then(response => response.json())
+    .then(data => {
+        data.forEach(pin => {
+            addMarkerToMap(pin.latitude, pin.longitude, pin.id, pin.city, pin.description);
+        });
+    })
+    .catch(err => console.error('Error fetching pins:', err));
+
+// Toast notification function
+function showToast(message, type) {
+    const toast = document.getElementById('feedback-toast');
+    toast.textContent = message;
+    toast.className = `notification ${type}`;
+    toast.style.display = 'block';
+
+    setTimeout(() => {
+        toast.style.display = 'none';
+    }, 3000);
+}
