@@ -1,25 +1,116 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Interactive Map</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <link rel="stylesheet" href="/css/styles.css"> <!-- External CSS for styles -->
+
+    <!-- Bulma CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+    <!-- External CSS for additional styles -->
+    <link rel="stylesheet" href="/css/main.css">
 </head>
 <body>
-<h1>Interactive Map</h1>
-<div id="map"></div>
-<div id="pin-form">
-    <label for="pin-name">Name:</label>
-    <input type="text" id="pin-name" placeholder="Enter name"><br>
-    <label for="pin-description">Description:</label>
-    <textarea id="pin-description" placeholder="Enter description"></textarea><br>
-    <button id="save-pin">Save</button>
-    <button id="cancel-pin">Cancel</button>
-</div>
-<script src="/js/main.js"></script>
+<section class="section">
+    <div class="container">
+        <h1 class="title has-text-centered">Interactive Map</h1>
 
+        <!-- Map Container -->
+        <div id="map"></div>
+
+        <!-- Toast for Feedback -->
+        <div id="feedback-toast" class="notification is-primary" style="display: none;"></div>
+
+        <!-- Add/Edit Pin Modal -->
+        <div id="pin-modal" class="modal">
+            <div class="modal-background"></div>
+            <div class="modal-card">
+                <header class="modal-card-head">
+                    <p class="modal-card-title">Add or Edit Pin</p>
+                    <button class="delete" aria-label="close" onclick="closePinModal()"></button>
+                </header>
+                <section class="modal-card-body">
+                    <div class="field">
+                        <label class="label">Name</label>
+                        <div class="control">
+                            <input id="pin-name" class="input" type="text" placeholder="Enter pin name">
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="label">Description</label>
+                        <div class="control">
+                            <textarea id="pin-description" class="textarea" placeholder="Enter pin description"></textarea>
+                        </div>
+                    </div>
+                </section>
+                <footer class="modal-card-foot">
+                    <button id="save-pin" class="button is-primary">Save Changes</button>
+                    <button class="button" onclick="closePinModal()">Cancel</button>
+                </footer>
+            </div>
+        </div>
+
+        <!-- Delete Confirmation Modal -->
+        <div id="delete-confirmation-modal" class="modal">
+            <div class="modal-background"></div>
+            <div class="modal-card">
+                <header class="modal-card-head">
+                    <p class="modal-card-title">Confirm Deletion</p>
+                    <button class="delete" aria-label="close" onclick="document.getElementById('delete-confirmation-modal').classList.remove('is-active');"></button>
+                </header>
+                <section class="modal-card-body">
+                    Are you sure you want to delete this pin? This action cannot be undone.
+                </section>
+                <footer class="modal-card-foot">
+                    <button id="confirm-delete" class="button is-danger">Delete</button>
+                    <button id="cancel-delete" class="button" onclick="document.getElementById('delete-confirmation-modal').classList.remove('is-active');">Cancel</button>
+                </footer>
+            </div>
+        </div>
+
+
+        <!-- Edit Pin Modal -->
+        <div id="edit-pin-modal" class="modal">
+            <div class="modal-background"></div>
+            <div class="modal-card">
+                <header class="modal-card-head">
+                    <p class="modal-card-title">Edit Pin</p>
+                    <button class="delete" aria-label="close" onclick="closeEditModal()"></button>
+                </header>
+                <section class="modal-card-body">
+                    <div class="field">
+                        <label class="label" for="edit-pin-name">Name:</label>
+                        <div class="control">
+                            <input class="input" type="text" id="edit-pin-name" placeholder="Enter new name">
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="label" for="edit-pin-description">Description:</label>
+                        <div class="control">
+                            <textarea class="textarea" id="edit-pin-description" placeholder="Enter new description"></textarea>
+                        </div>
+                    </div>
+                </section>
+                <footer class="modal-card-foot">
+                    <button class="button is-primary" onclick="saveEdit()">Save Changes</button>
+                    <button class="button" onclick="closeEditModal()">Cancel</button>
+                </footer>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- Main JavaScript -->
+<script src="/js/main.js"></script>
 </body>
 </html>
