@@ -1,6 +1,6 @@
 
 # Interactive Map Project
-
+![01_global.png](screenshots/01_global.png)
 An interactive web application using **Spring Boot**, **Leaflet.js**, and **MySQL** to create, edit, and manage map pinpoints.
 
 ## Features
@@ -59,12 +59,15 @@ An interactive web application using **Spring Boot**, **Leaflet.js**, and **MySQ
 
 1. **Add a Pinpoint**:
    - Click anywhere on the map to open the form for adding a pinpoint.
-   - Enter the name and description, then click "Save."
+   - Enter the name and description, then click "Save Changes"
+![02_add-or-edit.png](screenshots/02_add-or-edit.png)
+
 
 2. **Edit a Pinpoint**:
    - Click on an existing pinpoint marker.
    - Select the "Edit" button in the popup.
    - Enter the new details in the prompt and confirm.
+![03_click-on-pin.png](screenshots/03_click-on-pin.png)
 
 3. **Delete a Pinpoint**:
    - Click on a marker.
@@ -85,10 +88,5 @@ An interactive web application using **Spring Boot**, **Leaflet.js**, and **MySQ
 - Thymeleaf
 - Maven Wrapper
 
-## Screenshots
 
-![Interactive Map Example](https://via.placeholder.com/800x400?text=Interactive+Map+Preview)
 
-## License
-
-This project is licensed under the Apache License 2.0. See the `LICENSE` file for details.
